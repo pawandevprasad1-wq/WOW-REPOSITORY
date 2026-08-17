@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login / Signup</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, sans-serif; }
+        body { background: linear-gradient(135deg, #2e1065, #3b0764, #c0c0c0); min-height: 100vh; display: flex; justify-content: center; align-items: center; padding: 20px; }
+        .auth-card { background: #ffffff; width: 100%; max-width: 400px; padding: 30px; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); border: 2px solid #e2e8f0; text-align: center; }
+        h2 { color: #581c87; margin-bottom: 20px; font-weight: 700; }
+        .input-group { margin-bottom: 15px; text-align: left; }
+        label { display: block; font-size: 13px; color: #4b5563; margin-bottom: 5px; font-weight: 600; }
+        input { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 14px; outline: none; }
+        input:focus { border-color: #7e22ce; }
+        button { width: 100%; padding: 12px; background: #6b21a8; color: #ffffff; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 15px; transition: 0.3s; margin-top: 10px; }
+        button:hover { background: #581c87; }
+        .toggle-btn { background: transparent; color: #6b21a8; border: none; margin-top: 15px; font-size: 13px; cursor: pointer; text-decoration: underline; }
+        #msg { margin-top: 15px; font-size: 13px; font-weight: 600; }
+        .error { color: #dc2626; }
+        .success { color: #16a34a; }
+    </style>
+</head>
+<body>
+
+<div class="auth-card">
+    <h2 id="formTitle">Login</h2>
+    <form id="authForm">
+        <div class="input-group">
+            <label>Username</label>
+            <input type="text" id="username" required placeholder="Enter username">
+        </div>
+        <div class="input-group">
+            <label>Password</label>
+            <input type="password" id="password" required placeholder="Enter password">
+        </div>
+        <button type="submit" id="submitBtn">Login</button>
+    </form>
+    
+    <div id="msg"></div>
+    <button type="button" class="toggle-btn" id="toggleBtn" onclick="toggleForm()">Don't have an account? Signup first</button>
+</div>
+
+<script>
+let isLogin = true;
+
+function toggleForm() {
+    isLogin = !isLogin;
+    document.getElementById('formTitle').innerText = isLogin ? 'Login' : 'Signup';
+    document.getElementById('submitBtn').innerText = isLogin ? 'Login' : 'Create Account';
+    document.getElementById('toggleBtn').innerText = isLogin ? "Don't have an account? Signup first" : "Already have an account? Login";
+    document.getElementById('msg').innerText = '';
+}
+
+document.getElementById('authForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+    const msgDiv = document.getElementById('msg');
+    
+    const endpoint = isLogin ? '/login' : '/signup';
+    
+    try {
+        const res = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+        });
+        
+        const data = await res.json();
+        
+        if (res.ok) {
+            if (isLogin) {
+                window.location.href = '/dashboard';
+            } else {
+                msgDiv.className = 'success';
+                msgDiv.innerText = data.message;
+                toggleForm();
+            }
+        } else {
+            msgDiv.className = 'error';
+            msgDiv.innerText = data.message || 'Operation failed';
+        }
+    } catch (err) {
+        msgDiv.className = 'error';
+        msgDiv.innerText = 'Server error. Please try again.';
+    }
+});
+</script>
+
+</body>
+</html>
+
