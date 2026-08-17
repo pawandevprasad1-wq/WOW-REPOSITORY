@@ -7,7 +7,7 @@ app = Flask(__name__)
 app.secret_key = os.environ.get('FLASK_SECRET_KEY', 'my-super-secret-key-12345')
 
 # MongoDB Configuration
-MONGO_URI = os.environ.get('MONGO_URI', 'mongodb+srv://pawandevprasad1_db_user:<db_password>@cluster0.acobnxp.mongodb.net/?appName=Cluster0')
+MONGO_URI = os.environ.get('MONGO_URI', 'mongodb+srv://pawandevprasad1_db_user:12345@cluster0.acobnxp.mongodb.net/?appName=Cluster0')
 DB_NAME = 'WOW'
 COLLECTION_NAME = 'WOW'
 
