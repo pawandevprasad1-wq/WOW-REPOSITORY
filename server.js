@@ -4,14 +4,18 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Serve static files from root
-app.use(express.static(path.join(__dirname)));
+// Current directory ya subfolders se index.html serve karne ke liye
+app.use(express.static(__dirname));
 
 app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
+    res.sendFile(path.join(__dirname, 'index.html'), (err) => {
+        if (err) {
+            // Agar root mein nahi mili, toh subfolder check karega
+            res.sendFile(path.resolve('./index.html'));
+        }
+    });
 });
 
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
-
