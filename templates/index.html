@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>3D Rocket Engine - Hand Control</title>
+    <!-- Three.js (3D Graphics Library) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- MediaPipe Libraries for Hand Tracking -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background-color: #0d0f12; color: #ffffff; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; overflow: hidden; height: 100vh; width: 100vw; }
+        #canvas-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
+        video { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0.15; z-index: 0; transform: scaleX(-1); }
+        .overlay { position: absolute; top: 16px; left: 16px; z-index: 10; background: rgba(22, 27, 34, 0.75); backdrop-filter: blur(8px); padding: 12px 18px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.1); }
+        .title { font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: #ff6b35; margin-bottom: 4px; }
+        .status { font-size: 12px; color: #a0aec0; }
+        .pulse { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #00e676; margin-right: 6px; box-shadow: 0 0 8px #00e676; }
+    </style>
+</head>
+<body>
+    <div class="overlay">
+        <div class="title">Rocket Engine Control</div>
+        <div class="status"><span class="pulse"></span>Camera Active: Show Hand to Rotate</div>
+    </div>
+    
+    <video id="webcam" playsinline></video>
+    <div id="canvas-container"></div>
+
+    <script>
+        // 1. Setup Three.js Scene
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.z = 6;
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(renderer.domElement);
+
+        // Lights
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const pointLight = new THREE.PointLight(0xff6b35, 2, 50);
+        pointLight.position.set(2, 3, 4);
+        scene.add(pointLight);
+
+        const blueLight = new THREE.PointLight(0x00d2ff, 1.5, 50);
+        blueLight.position.set(-2, -3, -2);
+        scene.add(blueLight);
+
+        // 2. Build Rocket Engine 3D Group
+        const engineGroup = new THREE.Group();
+
+        // Main Cone / Nozzle
+        const coneGeo = new THREE.CylinderGeometry(0.6, 1.8, 3.2, 32, 1, true);
+        const metallicMat = new THREE.MeshStandardMaterial({
+            color: 0x2d3748,
+            metalness: 0.8,
+            roughness: 0.2,
+            wireframe: true
+        });
+        const nozzle = new THREE.Mesh(coneGeo, metallicMat);
+        nozzle.position.y = -0.5;
+        engineGroup.add(nozzle);
+
+        // Combustion Chamber
+        const sphereGeo = new THREE.SphereGeometry(0.8, 32, 16);
+        const chamberMat = new THREE.MeshStandardMaterial({
+            color: 0x4a5568,
+            metalness: 0.9,
+            roughness: 0.1
+        });
+        const chamber = new THREE.Mesh(sphereGeo, chamberMat);
+        chamber.position.y = 1.2;
+        engineGroup.add(chamber);
+
+        // Thrust Ring (Glow Effect)
+        const ringGeo = new THREE.RingGeometry(0.1, 1.7, 32);
+        const glowMat = new THREE.MeshBasicMaterial({
+            color: 0xff3e3e,
+            side: THREE.DoubleSide
+        });
+        const ring = new THREE.Mesh(ringGeo, glowMat);
+        ring.rotation.x = Math.PI / 2;
+        ring.position.y = -2.1;
+        engineGroup.add(ring);
+
+        scene.add(engineGroup);
+
+        // Target and Current Rotations for Smooth Interpolation (Lerp)
+        let targetRotX = 0;
+        let targetRotY = 0;
+        let targetRotZ = 0;
+
+        // 3. MediaPipe Hand Tracking Setup
+        const videoElement = document.getElementById('webcam');
+
+        function onResults(results) {
+            if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+                const landmarks = results.multiHandLandmarks[0];
+
+                // Wrist (0) and Middle Finger Base (9)
+                const wrist = landmarks[0];
+                const middleBase = landmarks[9];
+
+                // Calculate Hand Tilt/Rotation Angle (Z-axis)
+                const dx = middleBase.x - wrist.x;
+                const dy = middleBase.y - wrist.y;
+                const angleZ = Math.atan2(dy, dx);
+
+                // Map Finger positions to 3D Angles
+                targetRotY = (middleBase.x - 0.5) * Math.PI * 3;
+                targetRotX = (middleBase.y - 0.5) * Math.PI * 3;
+                targetRotZ = -angleZ;
+            }
+        }
+
+        const hands = new Hands({
+            locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+        });
+
+        hands.setOptions({
+            maxNumHands: 1,
+            modelComplexity: 1,
+            minDetectionConfidence: 0.65,
+            minTrackingConfidence: 0.65
+        });
+
+        hands.onResults(onResults);
+
+        const cameraFeed = new Camera(videoElement, {
+            onFrame: async () => {
+                await hands.send({ image: videoElement });
+            },
+            width: 640,
+            height: 480
+        });
+
+        cameraFeed.start();
+
+        // 4. Animation Loop with Lerp (Makkhan Jaise Smooth Movement Ke Liye)
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // Lerp interpolation (smoothing)
+            engineGroup.rotation.x += (targetRotX - engineGroup.rotation.x) * 0.08;
+            engineGroup.rotation.y += (targetRotY - engineGroup.rotation.y) * 0.08;
+            engineGroup.rotation.z += (targetRotZ - engineGroup.rotation.z) * 0.08;
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        // Handle Window Resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
+
