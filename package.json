@@ -1,15 +1,15 @@
 {
-  "name": "rocket-3d-gesture-control",
+  "name": "render-voice-app",
   "version": "1.0.0",
-  "description": "3D Rocket Engine Gesture Control System hosted on Render",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
-    "express": "^4.18.2"
-  },
-  "engines": {
-    "node": ">=14.0.0"
+    "cloudinary": "^1.41.0",
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "mongoose": "^8.2.0",
+    "multer": "^1.4.5-lts.1"
   }
 }
