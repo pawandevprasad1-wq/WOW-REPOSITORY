@@ -5,26 +5,23 @@ from pymongo import MongoClient
 
 app = Flask(__name__)
 
-# Aapka Direct Mongo Atlas Connection
 MONGO_URI = os.getenv("MONGO_URI", "mongodb+srv://pawandevprasad1_db_user:12345@cluster0.acobnxp.mongodb.net/?appName=Cluster0")
 
 client = MongoClient(MONGO_URI)
-db = client['WOW']        # Database Name
-collection = db['AZ']      # Collection Name
+db = client['WOW']
+collection = db['AZ']
 
-# Home Page Route (Database se Live Properties Load karega)
 @app.route('/')
 def home():
     try:
-        # Direct MongoDB Query: Sponsored pehle sort hongi (-1)
         properties = list(collection.find().sort([("is_sponsored", -1)]).limit(20))
         for p in properties:
-            p['_id'] = str(p['_id'])  # ObjectId ko string mein convert kiya
+            p['_id'] = str(p['_id'])
         return render_template('index.html', properties=properties)
     except Exception as e:
         return f"Database Connection Error: {str(e)}"
 
-# 1. Screenshot-style Auto-Complete Suggestions API
+# FIXED AUTO-SUGGEST: Grouping duplicate localities into a single clean suggestion
 @app.route('/api/search/suggest', methods=['GET'])
 def search_suggest():
     query = request.args.get('q', '').strip()
@@ -34,51 +31,72 @@ def search_suggest():
     regex = re.compile(f".*{query}.*", re.IGNORECASE)
     suggestions = []
 
-    # MongoDB Aggregation Pipeline for Localities & Cities
+    # 1. GROUPING LOCALITIES & CITIES (Duplicates Hataney Ke Liye)
     locations = collection.aggregate([
-        {"$match": {
-            "$or": [
-                {"location.city": regex},
-                {"location.locality": regex},
-                {"location.sub_locality": regex},
-                {"City": regex},
-                {"location": regex}
-            ]
-        }},
-        {"$group": {
-            "_id": "$location.locality",
-            "city": {"$first": "$location.city"},
-            "type": {"$first": "Locality"}
-        }},
-        {"$limit": 5}
+        {
+            "$match": {
+                "$or": [
+                    {"location.city": regex},
+                    {"location.locality": regex},
+                    {"location.sub_locality": regex},
+                    {"City": regex},
+                    {"location": regex}
+                ]
+            }
+        },
+        # Grouping Stage: Unique Localities aur City nikalne ke liye
+        {
+            "$group": {
+                "_id": {
+                    "locality": { "$ifNull": ["$location.locality", "$location"] },
+                    "city": { "$ifNull": ["$location.city", "$City"] }
+                }
+            }
+        },
+        { "$limit": 5 }
     ])
 
     for loc in locations:
-        if loc['_id']:
-            city_name = loc.get('city', '')
+        loc_name = loc['_id']['locality']
+        city_name = loc['_id']['city']
+        
+        if loc_name:
+            title_str = f"{loc_name}" + (f", {city_name}" if city_name else "")
             suggestions.append({
-                "title": f"{loc['_id']}" + (f", {city_name}" if city_name else ""),
-                "type": "Locality"
+                "title": title_str,
+                "type": "Locality",
+                "search_keyword": loc_name  # Specific search ke liye
             })
 
-    # MongoDB Query for Project Titles
-    titles = collection.find(
-        {"$or": [{"title": regex}, {"Property Title / Headline": regex}]},
-        {"title": 1, "Property Title / Headline": 1, "location.city": 1, "City": 1}
-    ).limit(5)
+    # 2. GROUPING PROJECTS / TITLES (Agar specific housing society/project name match ho)
+    titles = collection.aggregate([
+        {
+            "$match": {
+                "$or": [
+                    {"title": regex},
+                    {"Property Title / Headline": regex}
+                ]
+            }
+        },
+        {
+            "$group": {
+                "_id": { "$ifNull": ["$title", "$Property Title / Headline"] }
+            }
+        },
+        { "$limit": 3 }
+    ])
 
     for t in titles:
-        title_text = t.get('title') or t.get('Property Title / Headline', '')
-        city_text = t.get('location', {}).get('city') if isinstance(t.get('location'), dict) else t.get('City', '')
-        
-        suggestions.append({
-            "title": f"{title_text}" + (f", {city_text}" if city_text else ""),
-            "type": "Project / Listing"
-        })
+        if t['_id']:
+            suggestions.append({
+                "title": t['_id'],
+                "type": "Project / Headline",
+                "search_keyword": t['_id']
+            })
 
     return jsonify({"suggestions": suggestions})
 
-# 2. Dynamic Search Filter Endpoint
+# SEARCH RESULTS API
 @app.route('/api/search', methods=['GET'])
 def search():
     query = request.args.get('q', '').strip()
@@ -98,7 +116,6 @@ def search():
             ]
         }
 
-    # Sponsored listings first sorting logic
     results = list(collection.find(filter_query).sort([("is_sponsored", -1)]))
     for r in results:
         r['_id'] = str(r['_id'])
@@ -107,4 +124,4 @@ def search():
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
-      
+    
