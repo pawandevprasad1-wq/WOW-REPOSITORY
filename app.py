@@ -6,7 +6,6 @@ from bson.objectid import ObjectId
 app = Flask(__name__)
 
 # ==================== DATABASE CONFIGURATION ====================
-# यहाँ स्मॉल 'm' से 'mongodb+srv://' कर दिया गया है
 MONGO_URI = "mongodb+srv://pawandevprasad1_db_user:12300pawandevprasad03112010@cluster0.acobnxp.mongodb.net/?appName=Cluster0"
 DB_NAME = "BUY_PROPERTY_KOLKATA"
 COLLECTION_NAME = "KOLKATA_LISTING"
@@ -28,7 +27,6 @@ def search_location():
     if not query:
         return jsonify([])
 
-    # Case-insensitive regex search
     regex = {"$regex": query, "$options": "i"}
     pipeline = [
         {"$match": {"$or": [
@@ -70,7 +68,7 @@ def listings():
     
     properties = list(collection.find(query))
     for p in properties:
-        p['_id'] = str(p['_id'])  # Convert ObjectId to string
+        p['_id'] = str(p['_id'])  # ObjectId को String में कन्वर्ट करना
 
     return render_template('listings.html', properties=properties, location=location_query)
 
@@ -78,13 +76,20 @@ def listings():
 @app.route('/property/<property_id>')
 def property_detail(property_id):
     try:
-        prop = collection.find_one({"_id": ObjectId(property_id)})
+        query = None
+        if ObjectId.is_valid(property_id):
+            query = {"_id": ObjectId(property_id)}
+        else:
+            query = {"_id": property_id}
+
+        prop = collection.find_one(query)
         if prop:
             prop['_id'] = str(prop['_id'])
             return render_template('detail.html', p=prop)
-        return "Property Not Found", 404
+        else:
+            return "<h1>प्रॉपर्टी नहीं मिली (Property Not Found)</h1>", 404
     except Exception as e:
-        return f"Error: {str(e)}", 400
+        return f"<h1>Error: {str(e)}</h1>", 500
 
 if __name__ == '__main__':
     app.run(debug=True)
