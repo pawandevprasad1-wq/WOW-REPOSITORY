@@ -6,7 +6,8 @@ from bson.objectid import ObjectId
 app = Flask(__name__)
 
 # ==================== DATABASE CONFIGURATION ====================
-MONGO_URI = "Mongodb+srv://pawandevprasad1_db_user:12300pawandevprasad03112010@cluster0.acobnxp.mongodb.net/?appName=Cluster0"
+# यहाँ स्मॉल 'm' से 'mongodb+srv://' कर दिया गया है
+MONGO_URI = "mongodb+srv://pawandevprasad1_db_user:12300pawandevprasad03112010@cluster0.acobnxp.mongodb.net/?appName=Cluster0"
 DB_NAME = "BUY_PROPERTY_KOLKATA"
 COLLECTION_NAME = "KOLKATA_LISTING"
 
