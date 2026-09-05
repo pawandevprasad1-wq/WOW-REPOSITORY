@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ p.title_and_description.title }}</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f4f9; margin: 0; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .gallery-container { display: flex; overflow-x: auto; gap: 10px; padding-bottom: 15px; scroll-snap-type: x mandatory; }
+        .gallery-container::-webkit-scrollbar { height: 8px; }
+        .gallery-container::-webkit-scrollbar-thumb { background: #0073e6; border-radius: 4px; }
+        .gallery-img { flex: 0 0 85%; height: 400px; object-fit: cover; border-radius: 8px; scroll-snap-align: center; }
+        .price { font-size: 28px; font-weight: bold; color: #d9534f; margin: 15px 0 5px; }
+        .title { font-size: 24px; font-weight: bold; margin-bottom: 15px; }
+        .section { margin-top: 25px; border-top: 1px solid #eee; padding-top: 15px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+        .grid-item { background: #f9f9f9; padding: 12px; border-radius: 5px; }
+        .amenities-list { display: flex; flex-wrap: wrap; gap: 10px; }
+        .tag { background: #e0f0ff; color: #0073e6; padding: 6px 12px; border-radius: 20px; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="gallery-container">
+        {% if p.media and p.media.images %}
+            {% for img in p.media.images %}
+                <img class="gallery-img" src="{{ img }}" alt="Property Image">
+            {% endfor %}
+        {% endif %}
+    </div>
+
+    <div class="price">{{ p.pricing.price_display }}</div>
+    <div class="title">{{ p.title_and_description.title }}</div>
+    <p>📍 {{ p.location.full_address }}</p>
+
+    <div class="section">
+        <h3>मुख्य विवरण (Specifications)</h3>
+        <div class="grid">
+            <div class="grid-item"><strong>BHK:</strong> {{ p.specifications.bhk_type }}</div>
+            <div class="grid-item"><strong>Carpet Area:</strong> {{ p.specifications.carpet_sqft }} sqft</div>
+            <div class="grid-item"><strong>Builtup Area:</strong> {{ p.specifications.builtup_sqft }} sqft</div>
+            <div class="grid-item"><strong>Floor:</strong> {{ p.specifications.floor_no }} / {{ p.specifications.total_floors }}</div>
+            <div class="grid-item"><strong>Furnishing:</strong> {{ p.specifications.furnishing_status }}</div>
+            <div class="grid-item"><strong>Facing:</strong> {{ p.specifications.facing_direction }}</div>
+            <div class="grid-item"><strong>Age:</strong> {{ p.specifications.property_age }}</div>
+            <div class="grid-item"><strong>Ownership:</strong> {{ p.specifications.ownership_type }}</div>
+        </div>
+    </div>
+
+    <div class="section">
+        <h3>सुविधाएं (Amenities)</h3>
+        <div class="amenities-list">
+            {% for item in p.amenities %}
+                <span class="tag">{{ item }}</span>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="section">
+        <h3>संपर्क करें (Contact)</h3>
+        <p><strong>नाम:</strong> {{ p.contact.owner_name }} ({{ p.contact.owner_type }})</p>
+        <p><strong>फोन नंबर:</strong> {{ p.contact.phone }}</p>
+    </div>
+</div>
+
+</body>
+</html>
+
