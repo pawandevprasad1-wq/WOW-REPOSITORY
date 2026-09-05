@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Properties in {{ location }}</title>
+    <style>
+        body { font-family: Arial, sans-serif; background-color: #f8f9fa; margin: 0; padding: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        h2 { color: #333; }
+        .card { background: white; border-radius: 8px; margin-bottom: 25px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); overflow: hidden; display: flex; flex-direction: column; cursor: pointer; transition: 0.3s; }
+        .card:hover { transform: translateY(-3px); }
+        .card-img { width: 100%; height: 300px; object-fit: cover; }
+        .card-content { padding: 20px; }
+        .price { font-size: 22px; font-weight: bold; color: #d9534f; margin-bottom: 8px; }
+        .title { font-size: 20px; font-weight: bold; margin-bottom: 10px; color: #0073e6; }
+        .details { color: #555; font-size: 15px; margin-bottom: 10px; }
+        .location-text { color: #888; font-size: 14px; }
+        @media(min-width: 600px) {
+            .card { flex-direction: row; }
+            .card-img { width: 40%; height: 220px; }
+            .card-content { width: 60%; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>"{{ location }}" में उपलब्ध प्रॉपर्टीज़</h2>
+
+    {% if not properties %}
+        <p>इस लोकेशन पर कोई प्रॉपर्टी नहीं मिली।</p>
+    {% endif %}
+
+    {% for p in properties %}
+    <div class="card" onclick="window.location.href='/property/{{ p._id }}'">
+        <img class="card-img" src="{{ p.media.images[0] if p.media and p.media.images else 'https://via.placeholder.com/400x250' }}" alt="Property Photo">
+        <div class="card-content">
+            <div class="price">{{ p.pricing.price_display }}</div>
+            <div class="title">{{ p.title_and_description.title }}</div>
+            <div class="details">
+                <strong>{{ p.specifications.bhk_type }}</strong> • {{ p.specifications.builtup_sqft }} sqft • {{ p.specifications.furnishing_status }}
+            </div>
+            <div class="location-text">📍 {{ p.location.full_address }}</div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+</body>
+</html>
+
