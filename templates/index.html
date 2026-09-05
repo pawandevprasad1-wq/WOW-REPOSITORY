@@ -1,160 +1,56 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="hi">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Real Estate Search App</title>
-  <style>
-    * { box-sizing: border-box; font-family: 'Segoe UI', Arial, sans-serif; }
-    body { background-color: #f5f6f8; margin: 0; padding: 20px; }
-    .container { max-width: 600px; margin: 0 auto; }
-    
-    /* Search Bar UI */
-    .search-wrapper { position: relative; margin-bottom: 20px; }
-    .search-input { 
-      width: 100%; padding: 14px 20px; font-size: 16px; border: 2px solid #e0e0e0; 
-      border-radius: 10px; outline: none; box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-    }
-    .suggestions-box { 
-      position: absolute; top: 100%; left: 0; right: 0; background: white; 
-      border-radius: 10px; box-shadow: 0 8px 16px rgba(0,0,0,0.12); display: none; z-index: 10; margin-top: 5px;
-    }
-    .suggestion-item { 
-      padding: 12px 20px; border-bottom: 1px solid #f0f0f0; cursor: pointer; 
-      display: flex; justify-content: space-between; align-items: center;
-    }
-    .suggestion-item:hover { background-color: #f9f9f9; }
-    .tag { font-size: 11px; background: #eef2ff; color: #4f46e5; padding: 3px 8px; border-radius: 5px; font-weight: 600; }
-
-    /* Property Cards UI */
-    .card { background: white; border-radius: 12px; margin-bottom: 20px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.08); position: relative; }
-    .card-img { width: 100%; height: 220px; object-fit: cover; background-color: #e5e7eb; }
-    .card-body { padding: 15px; }
-    .price { font-size: 22px; font-weight: bold; color: #16a34a; }
-    .title { font-size: 16px; font-weight: 600; margin: 5px 0; color: #1f2937; }
-    .location { font-size: 13px; color: #6b7280; }
-    .sponsored-badge { 
-      position: absolute; top: 10px; left: 10px; background: #f59e0b; color: white; 
-      font-size: 11px; font-weight: bold; padding: 4px 8px; border-radius: 4px; text-transform: uppercase;
-    }
-    .details { display: flex; gap: 15px; font-size: 13px; margin-top: 10px; color: #4b5563; border-top: 1px solid #f0f0f0; padding-top: 10px; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Property Finder - Search</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f4f9; margin: 0; padding: 0; }
+        .hero { background: #0073e6; padding: 80px 20px; text-align: center; color: white; }
+        .search-container { position: relative; max-width: 600px; margin: 0 auto; }
+        input[type="text"] { width: 100%; padding: 15px; font-size: 18px; border: none; border-radius: 5px; box-sizing: border-box; }
+        .suggestions { position: absolute; top: 55px; left: 0; width: 100%; background: white; border-radius: 5px; box-shadow: 0 4px 10px rgba(0,0,0,0.15); z-index: 1000; color: #333; text-align: left; max-height: 250px; overflow-y: auto; }
+        .suggestion-item { padding: 12px 15px; border-bottom: 1px solid #eee; cursor: pointer; }
+        .suggestion-item:hover { background: #f0f0f0; color: #0073e6; }
+    </style>
 </head>
 <body>
 
-<div class="container">
-  <!-- Search Bar -->
-  <div class="search-wrapper">
-    <input type="text" id="searchInput" class="search-input" placeholder="Search by locality, landmark or city (e.g. Kolkata)" autocomplete="off">
-    <div id="suggestionsBox" class="suggestions-box"></div>
-  </div>
-
-  <!-- Listings Stream (Dynamic Mongo Data) -->
-  <div id="listingsContainer">
-    {% for p in properties %}
-      <div class="card">
-        {% if p.is_sponsored %}
-          <div class="sponsored-badge">Sponsored</div>
-        {% endif %}
-        
-        <!-- Image Renderer -->
-        {% if p.images and p.images|length > 0 %}
-          <img src="{{ p.images[0] }}" class="card-img" alt="Property Image">
-        {% elif p['image url'] and p['image url']|length > 0 %}
-          <img src="{{ p['image url'][0] }}" class="card-img" alt="Property Image">
-        {% endif %}
-
-        <div class="card-body">
-          <div class="price">{{ p.price_display or p.Price or 'Price on Call' }}</div>
-          <div class="title">{{ p.title or p['Property Title / Headline'] }}</div>
-          <div class="location">📍 {{ p.location.locality or p.location or '' }}, {{ p.location.city or p.City or '' }}</div>
-          <div class="details">
-            <span>🏠 {{ p.bhk_type or p['BHK Type (1 BHK / 2 BHK / 3 BHK / etc.)'] or '' }}</span>
-            <span>📐 {{ p.area.builtup_sqft if p.area else p['Total Built-up Area (Sq. Ft.)'] or '' }} sqft</span>
-            <span>👤 {{ p.owner_type or p['Owner Type (Direct Owner / Agent / Builder)'] or '' }}</span>
-          </div>
-        </div>
-      </div>
-    {% endfor %}
-  </div>
+<div class="hero">
+    <h1>कोलकाता में अपनी पसंदीदा लोकेशन खोजें</h1>
+    <div class="search-container">
+        <input type="text" id="searchBox" placeholder="लोकेशन टाइप करें (जैसे Purbalok, Garia, Mukundpur)..." autocomplete="off">
+        <div id="suggestions" class="suggestions"></div>
+    </div>
 </div>
 
 <script>
-  const searchInput = document.getElementById('searchInput');
-  const suggestionsBox = document.getElementById('suggestionsBox');
-  const listingsContainer = document.getElementById('listingsContainer');
-  let debounceTimer;
+    const searchBox = document.getElementById('searchBox');
+    const suggestions = document.getElementById('suggestions');
 
-  // Search Suggestion Logic
-  searchInput.addEventListener('input', function() {
-    clearTimeout(debounceTimer);
-    const query = this.value.trim();
+    searchBox.addEventListener('input', async function() {
+        const query = this.value.trim();
+        if (query.length < 1) {
+            suggestions.innerHTML = '';
+            return;
+        }
 
-    if (query.length < 2) {
-      suggestionsBox.style.display = 'none';
-      return;
-    }
+        const response = await fetch(`/api/search_location?q=${encodeURIComponent(query)}`);
+        const locations = await response.json();
 
-    debounceTimer = setTimeout(() => {
-      fetch(`/api/search/suggest?q=${query}`)
-        .then(res => res.json())
-        .then(data => {
-          if (data.suggestions && data.suggestions.length > 0) {
-            suggestionsBox.innerHTML = data.suggestions.map(s => `
-              <div class="suggestion-item" onclick="selectSuggestion('${s.title}')">
-                <span>📍 ${s.title}</span>
-                <span class="tag">${s.type}</span>
-              </div>
-            `).join('');
-            suggestionsBox.style.display = 'block';
-          } else {
-            suggestionsBox.style.display = 'none';
-          }
+        suggestions.innerHTML = '';
+        locations.forEach(loc => {
+            const div = document.createElement('div');
+            div.className = 'suggestion-item';
+            div.innerText = loc;
+            div.onclick = function() {
+                window.location.href = `/listings?location=${encodeURIComponent(loc)}`;
+            };
+            suggestions.appendChild(div);
         });
-    }, 300);
-  });
-
-  function selectSuggestion(text) {
-    searchInput.value = text.split(',')[0];
-    suggestionsBox.style.display = 'none';
-    executeSearch(searchInput.value);
-  }
-
-  // Fetch Listing Results Dynamically
-  function executeSearch(query) {
-    fetch(`/api/search?q=${query}`)
-      .then(res => res.json())
-      .then(data => {
-        listingsContainer.innerHTML = data.results.map(p => {
-          const imgUrl = (p.images && p.images[0]) || (p['image url'] && p['image url'][0]) || '';
-          const title = p.title || p['Property Title / Headline'] || '';
-          const price = p.price_display || p.Price || 'Price on Call';
-          const locality = (p.location && p.location.locality) || p.location || '';
-          const city = (p.location && p.location.city) || p.City || '';
-          const bhk = p.bhk_type || p['BHK Type (1 BHK / 2 BHK / 3 BHK / etc.)'] || '';
-          const area = (p.area && p.area.builtup_sqft) || p['Total Built-up Area (Sq. Ft.)'] || '';
-          const owner = p.owner_type || p['Owner Type (Direct Owner / Agent / Builder)'] || '';
-
-          return `
-            <div class="card">
-              ${p.is_sponsored ? '<div class="sponsored-badge">Sponsored</div>' : ''}
-              ${imgUrl ? `<img src="${imgUrl}" class="card-img" alt="Property Image">` : ''}
-              <div class="card-body">
-                <div class="price">${price}</div>
-                <div class="title">${title}</div>
-                <div class="location">📍 ${locality}, ${city}</div>
-                <div class="details">
-                  <span>🏠 ${bhk}</span>
-                  <span>📐 ${area} sqft</span>
-                  <span>👤 ${owner}</span>
-                </div>
-              </div>
-            </div>
-          `;
-        }).join('');
-      });
-  }
+    });
 </script>
 
 </body>
 </html>
+
