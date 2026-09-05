@@ -3,101 +3,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ p.title_and_description.title if p.title_and_description else 'Property Details' }}</title>
+    <title>Properties in {{ location }}</title>
     <style>
-        * { box-sizing: border-box; }
-        body { font-family: Arial, sans-serif; background: #f4f4f9; margin: 0; padding: 15px; }
-        .container { max-width: 900px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        
-        /* Gallery Horizontal Scroll Slider */
-        .gallery-container { display: flex; overflow-x: auto; gap: 10px; padding-bottom: 15px; scroll-snap-type: x mandatory; }
-        .gallery-container::-webkit-scrollbar { height: 8px; }
-        .gallery-container::-webkit-scrollbar-thumb { background: #0073e6; border-radius: 4px; }
-        .gallery-img { flex: 0 0 85%; max-width: 85%; height: 380px; object-fit: cover; border-radius: 8px; scroll-snap-align: center; }
-        
-        .price { font-size: 28px; font-weight: bold; color: #d9534f; margin: 15px 0 5px; }
-        .title { font-size: 22px; font-weight: bold; margin-bottom: 10px; color: #222; }
-        .location { color: #666; font-size: 15px; margin-bottom: 20px; }
-        .section { margin-top: 25px; border-top: 1px solid #eee; padding-top: 15px; }
-        .section h3 { margin-bottom: 15px; color: #0073e6; }
-        
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
-        .grid-item { background: #f9f9f9; padding: 12px; border-radius: 6px; border: 1px solid #eee; font-size: 14px; }
-        .grid-item strong { color: #333; }
-        
-        .amenities-list { display: flex; flex-wrap: wrap; gap: 10px; }
-        .tag { background: #e0f0ff; color: #0073e6; padding: 8px 14px; border-radius: 20px; font-size: 14px; font-weight: 500; }
-        
-        .contact-card { background: #f8f9fa; border-left: 4px solid #0073e6; padding: 15px; border-radius: 4px; }
-        .btn-back { display: inline-block; margin-bottom: 15px; color: #0073e6; text-decoration: none; font-weight: bold; }
+        body { font-family: Arial, sans-serif; background-color: #f8f9fa; margin: 0; padding: 20px; }
+        .container { max-width: 1000px; margin: 0 auto; }
+        h2 { color: #333; }
+        .card { background: white; border-radius: 8px; margin-bottom: 25px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); overflow: hidden; display: flex; flex-direction: column; cursor: pointer; transition: 0.3s; text-decoration: none; color: inherit; }
+        .card:hover { transform: translateY(-3px); }
+        .card-img { width: 100%; height: 300px; object-fit: cover; }
+        .card-content { padding: 20px; }
+        .price { font-size: 22px; font-weight: bold; color: #d9534f; margin-bottom: 8px; }
+        .title { font-size: 20px; font-weight: bold; margin-bottom: 10px; color: #0073e6; }
+        .details { color: #555; font-size: 15px; margin-bottom: 10px; }
+        .location-text { color: #888; font-size: 14px; }
+        @media(min-width: 600px) {
+            .card { flex-direction: row; }
+            .card-img { width: 40%; height: 220px; }
+            .card-content { width: 60%; }
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <a href="javascript:history.back()" class="btn-back">← वापस लिस्टिंग पर जाएँ</a>
+    <h2>"{{ location }}" में उपलब्ध प्रॉपर्टीज़</h2>
 
-    <!-- Photo Gallery Carousel -->
-    <div class="gallery-container">
-        {% if p.media and p.media.images and p.media.images|length > 0 %}
-            {% for img in p.media.images %}
-                <img class="gallery-img" src="{{ img }}" alt="Property Image">
-            {% endfor %}
-        {% else %}
-            <img class="gallery-img" src="https://via.placeholder.com/800x400?text=No+Image+Available" alt="No Image">
-        {% endif %}
-    </div>
-
-    <!-- Pricing & Title -->
-    <div class="price">{{ p.pricing.price_display if p.pricing else 'Price N/A' }}</div>
-    <div class="title">{{ p.title_and_description.title if p.title_and_description else 'Property' }}</div>
-    <div class="location">📍 {{ p.location.full_address if p.location else 'Location N/A' }}</div>
-
-    <!-- Specifications -->
-    {% if p.specifications %}
-    <div class="section">
-        <h3>मुख्य विवरण (Specifications)</h3>
-        <div class="grid">
-            <div class="grid-item"><strong>BHK Type:</strong> {{ p.specifications.bhk_type }}</div>
-            <div class="grid-item"><strong>Builtup Area:</strong> {{ p.specifications.builtup_sqft }} sqft</div>
-            <div class="grid-item"><strong>Carpet Area:</strong> {{ p.specifications.carpet_sqft }} sqft</div>
-            <div class="grid-item"><strong>Super Builtup:</strong> {{ p.specifications.super_builtup_sqft }} sqft</div>
-            <div class="grid-item"><strong>Floor:</strong> {{ p.specifications.floor_no }} / {{ p.specifications.total_floors }}</div>
-            <div class="grid-item"><strong>Bathrooms:</strong> {{ p.specifications.bathrooms }}</div>
-            <div class="grid-item"><strong>Balconies:</strong> {{ p.specifications.balconies }}</div>
-            <div class="grid-item"><strong>Furnishing:</strong> {{ p.specifications.furnishing_status }}</div>
-            <div class="grid-item"><strong>Construction:</strong> {{ p.specifications.construction_status }}</div>
-            <div class="grid-item"><strong>Facing:</strong> {{ p.specifications.facing_direction }}</div>
-            <div class="grid-item"><strong>Property Age:</strong> {{ p.specifications.property_age }}</div>
-            <div class="grid-item"><strong>Parking:</strong> {{ p.specifications.parking }}</div>
-            <div class="grid-item"><strong>Ownership:</strong> {{ p.specifications.ownership_type }}</div>
-        </div>
-    </div>
+    {% if not properties %}
+        <p>इस लोकेशन पर कोई प्रॉपर्टी नहीं मिली।</p>
     {% endif %}
 
-    <!-- Amenities -->
-    {% if p.amenities and p.amenities|length > 0 %}
-    <div class="section">
-        <h3>सुविधाएं (Amenities)</h3>
-        <div class="amenities-list">
-            {% for item in p.amenities %}
-                <span class="tag">{{ item }}</span>
-            {% endfor %}
+    {% for p in properties %}
+    <a class="card" href="/property/{{ p._id }}">
+        <img class="card-img" src="{{ p.media.images[0] if p.media and p.media.images and p.media.images|length > 0 else 'https://via.placeholder.com/400x250' }}" alt="Property Photo">
+        <div class="card-content">
+            <div class="price">{{ p.pricing.price_display if p.pricing else 'N/A' }}</div>
+            <div class="title">{{ p.title_and_description.title if p.title_and_description else 'Property Title' }}</div>
+            <div class="details">
+                {% if p.specifications %}
+                    <strong>{{ p.specifications.bhk_type }}</strong> • {{ p.specifications.builtup_sqft }} sqft • {{ p.specifications.furnishing_status }}
+                {% endif %}
+            </div>
+            <div class="location-text">📍 {{ p.location.full_address if p.location else 'Address N/A' }}</div>
         </div>
-    </div>
-    {% endif %}
-
-    <!-- Contact Info -->
-    {% if p.contact %}
-    <div class="section">
-        <h3>संपर्क विवरण (Contact Information)</h3>
-        <div class="contact-card">
-            <p style="margin: 5px 0;"><strong>ऑनर/एजेंट का नाम:</strong> {{ p.contact.owner_name }} ({{ p.contact.owner_type }})</p>
-            <p style="margin: 5px 0;"><strong>फोन नंबर:</strong> {{ p.contact.phone }}</p>
-        </div>
-    </div>
-    {% endif %}
+    </a>
+    {% endfor %}
 </div>
 
 </body>
 </html>
+
